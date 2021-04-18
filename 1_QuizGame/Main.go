@@ -7,7 +7,9 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
+	"time"
 )
 
 func main() {
@@ -15,7 +17,31 @@ func main() {
 	file, err := os.Open("quiz.csv")
 	check(err)
 	defer file.Close()
-	parseFile(file)
+	fmt.Println(file)
+	fileData := parseFile(file)
+	quizUser(fileData)
+}
+
+func askQuestion(question []string) chan bool {
+
+	answer := make(chan bool)
+	go func() {
+		time.Sleep(10 * time.Second)
+		answer <- true
+	}()
+
+	return answer
+}
+
+func quizUser(questions [][]string) {
+
+	for i := 0; i < len(questions); i++ {
+		question := questions[i]
+		fmt.Println(question[0])
+		fmt.Println(question[1])
+		staticBool := askQuestion(question)
+		fmt.Println(<-staticBool)
+	}
 }
 
 func parseFile(file *os.File) [][]string {
