@@ -8,69 +8,95 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
-	// "time"
+	"strings"
+	"time"
 )
+
+type problem struct {
+	question string
+	answer   string
+}
 
 func main() {
 
-	file, err := os.Open("quiz.csv")
+	csvFileName := flag.String("csv", "quiz.csv", "A csv file with a question,answer format")
+	flag.Parse()
+	_ = csvFileName
+	file, err := os.Open(*csvFileName)
 	check(err)
 	defer file.Close()
 	fileData := parseFile(file)
 	quizUser(fileData)
 }
 
-func askQuestion(question []string) chan bool {
-
-	answer := make(chan bool)
-	go func() {
-		// time.Sleep(10 * time.Second)
-		fmt.Println("Please answer the following question:")
-		fmt.Println(question[0])
-		// Convert answer from csv to int
-		intAnswer, err := strconv.Atoi(question[1])
-		check(err)
-		// Prompt user for answer and convert to int
-		var intGuess int
-		_, err = fmt.Scan(&intGuess)
-		check(err)
-		answer <- intGuess == intAnswer
-	}()
-
-	return answer
-}
-
-func quizUser(questions [][]string) {
+func quizUser(problems []problem) {
 
 	correctGuesses := 0
 	incorrectGuesses := 0
+	timeLimit := flag.Int("limit", 30, "The time limit for the quiz in seconds.")
+	flag.Parse()
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second) // quiz will end when time limit is up
 
 	// Iterate through questions from csv file, quizzing user
-	for i := 0; i < len(questions); i++ {
+	for i := 0; i < len(problems); i++ {
 
-		question := questions[i]
-		answerIsCorrect := askQuestion(question)
-		// Total up correct and incorrect guesses
-		if <-answerIsCorrect {
-			correctGuesses++
-		} else {
-			incorrectGuesses++
+		userAnswer := make(chan bool, 1)
+		newProblem := problems[i]
+		fmt.Println(i+1, ". ", newProblem.question)
+
+		go func() {
+			// Convert answer from string to int
+			intAnswer, err := strconv.Atoi(newProblem.answer)
+			check(err)
+			// Prompt user for answer and convert to int
+			var intGuess int
+			_, err = fmt.Scan(&intGuess)
+			check(err)
+			userAnswer <- intGuess == intAnswer
+		}()
+
+		select {
+		case <-timer.C: // if we hear from timer, quiz is over
+			fmt.Println("\nQuiz time limit exceeded!")
+			resultsMessage(correctGuesses, incorrectGuesses, len(problems))
+			return
+		case problemResult := <-userAnswer: // record correct and incorrect answers
+			if problemResult {
+				correctGuesses++
+			} else {
+				incorrectGuesses++
+			}
 		}
 	}
-
-	fmt.Println("You guessed " + strconv.Itoa(correctGuesses) + " correctly!")
-	fmt.Println("You guessed " + strconv.Itoa(incorrectGuesses) + " incorrectly!")
+	// print final results
+	resultsMessage(correctGuesses, incorrectGuesses, len(problems))
 }
 
-func parseFile(file *os.File) [][]string {
+func resultsMessage(correctGuesses int, incorrectGuesses int, numQuestions int) {
+	fmt.Println("You guessed " + strconv.Itoa(correctGuesses) + " correctly!")
+	fmt.Println("You guessed " + strconv.Itoa(incorrectGuesses) + " incorrectly!")
+	fmt.Println("Your score is " + strconv.Itoa(correctGuesses) + "/" + strconv.Itoa(numQuestions))
+}
+
+func parseFile(file *os.File) []problem {
 
 	reader := csv.NewReader(file)
 	fileData, err := reader.ReadAll()
 	check(err)
-	return fileData
+
+	// Extract problems from csv
+	problems := make([]problem, len(fileData))
+	for i, line := range fileData {
+		problems[i] = problem{
+			question: strings.TrimSpace(line[0]),
+			answer:   strings.TrimSpace(line[1]),
+		}
+	}
+	return problems
 }
 
 func check(e error) {
