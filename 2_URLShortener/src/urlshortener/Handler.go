@@ -1,8 +1,10 @@
-package urlshort
+package urlshortener
 
 import (
 	"net/http"
 )
+
+var urlPaths map[string]string
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -11,8 +13,14 @@ import (
 // If the path is not provided in the map, then the fallback
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
-	//	TODO: Implement this...
-	return nil
+	return func(res http.ResponseWriter, req *http.Request) {
+		path := req.URL.Path
+		if url, found := pathsToUrls[path]; found {
+			http.Redirect(res, req, url, 303)
+			return
+		}
+		fallback.ServeHTTP(res, req)
+	}
 }
 
 // YAMLHandler will parse the provided YAML and then return
