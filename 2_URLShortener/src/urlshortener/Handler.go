@@ -1,10 +1,11 @@
 package urlshortener
 
 import (
+	"fmt"
 	"net/http"
-)
 
-var urlPaths map[string]string
+	"gopkg.in/yaml.v2"
+)
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -16,7 +17,7 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 	return func(res http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		if url, found := pathsToUrls[path]; found {
-			http.Redirect(res, req, url, 303)
+			http.Redirect(res, req, url, http.StatusSeeOther)
 			return
 		}
 		fallback.ServeHTTP(res, req)
@@ -40,6 +41,42 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // See MapHandler to create a similar http.HandlerFunc via
 // a mapping of paths to urls.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	// TODO: Implement this...
-	return nil, nil
+
+	yamlMap, err := parseYaml(yml)
+	if err != nil {
+		return nil, err
+	}
+
+	umYamlMap, err := mapFromYaml(yamlMap)
+	if err != nil {
+		return nil, err
+	}
+	return MapHandler(umYamlMap, fallback), nil
+}
+
+type AppYaml struct {
+	Path string
+	URL  string
+}
+
+func parseYaml(yml []byte) ([]AppYaml, error) {
+
+	var appYaml []AppYaml
+	testYaml := yaml.Unmarshal(yml, &appYaml)
+
+	if testYaml != nil {
+		return nil, testYaml
+	}
+	return appYaml, nil
+}
+
+func mapFromYaml(umYaml []AppYaml) (map[string]string, error) {
+
+	umYamlMap := make(map[string]string)
+	fmt.Println(umYaml)
+
+	for _, appYaml := range umYaml {
+		umYamlMap[appYaml.Path] = appYaml.URL
+	}
+	return umYamlMap, nil
 }
