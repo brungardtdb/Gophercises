@@ -55,8 +55,8 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 }
 
 type AppYamlPath struct {
-	Path string
-	URL  string
+	Path string `yaml:"path"`
+	URL  string `yaml:"url"`
 }
 
 func parseYaml(yml []byte) ([]AppYamlPath, error) {
