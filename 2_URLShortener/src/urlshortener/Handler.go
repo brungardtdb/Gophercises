@@ -54,23 +54,23 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	return MapHandler(umYamlMap, fallback), nil
 }
 
-type AppYaml struct {
+type AppYamlPath struct {
 	Path string
 	URL  string
 }
 
-func parseYaml(yml []byte) ([]AppYaml, error) {
+func parseYaml(yml []byte) ([]AppYamlPath, error) {
 
-	var appYaml []AppYaml
-	testYaml := yaml.Unmarshal(yml, &appYaml)
+	var appYamlPaths []AppYamlPath
+	testYaml := yaml.Unmarshal(yml, &appYamlPaths)
 
 	if testYaml != nil {
 		return nil, testYaml
 	}
-	return appYaml, nil
+	return appYamlPaths, nil
 }
 
-func mapFromYaml(umYaml []AppYaml) (map[string]string, error) {
+func mapFromYaml(umYaml []AppYamlPath) (map[string]string, error) {
 
 	umYamlMap := make(map[string]string)
 	fmt.Println(umYaml)
