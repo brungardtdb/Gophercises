@@ -1,7 +1,6 @@
 package urlshortener
 
 import (
-	"fmt"
 	"net/http"
 
 	"gopkg.in/yaml.v2"
@@ -73,7 +72,6 @@ func parseYaml(yml []byte) ([]AppYamlPath, error) {
 func mapFromYaml(umYaml []AppYamlPath) (map[string]string, error) {
 
 	umYamlMap := make(map[string]string)
-	fmt.Println(umYaml)
 
 	for _, appYaml := range umYaml {
 		umYamlMap[appYaml.Path] = appYaml.URL
