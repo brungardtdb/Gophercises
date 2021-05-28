@@ -1,6 +1,7 @@
 package urlshortener
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"gopkg.in/yaml.v2"
@@ -77,4 +78,47 @@ func mapFromYaml(umYaml []AppYamlPath) (map[string]string, error) {
 		umYamlMap[appYaml.Path] = appYaml.URL
 	}
 	return umYamlMap, nil
+}
+
+// Bonus challenge - Parse URL Shortcut from JSON
+func JSONHandler(jsn []byte, fallback http.Handler) (http.HandlerFunc, error) {
+
+	jsonMap, err := parseJSON(jsn)
+	if err != nil {
+		return nil, err
+	}
+
+	umJSONMap, err := mapFromJSON(jsonMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return MapHandler(umJSONMap, fallback), nil
+}
+
+type AppJSONPath struct {
+	Path string `json:"path"`
+	URL  string `json:"url"`
+}
+
+// Parse JSON from slice of byte, unmarshall into slice of AppJSONPath
+func parseJSON(jsn []byte) ([]AppJSONPath, error) {
+
+	var appJSONPaths []AppJSONPath
+	testJson := json.Unmarshal(jsn, &appJSONPaths)
+	if testJson != nil {
+		return nil, testJson
+	}
+	return appJSONPaths, nil
+}
+
+// Create map of JSON key value pairs from slice of AppJSONPath
+func mapFromJSON(umJSON []AppJSONPath) (map[string]string, error) {
+
+	umJSONMap := make(map[string]string)
+
+	for _, appJSON := range umJSON {
+		umJSONMap[appJSON.Path] = appJSON.URL
+	}
+	return umJSONMap, nil
 }

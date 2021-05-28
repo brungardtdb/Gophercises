@@ -33,8 +33,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Build the JSONHandler using the YAMLHandler as the fallback
+	json := `
+		[{"path":"/go-json","url":"https://golang.org/pkg/encoding/json/"},
+		{"path":"/go-json-byexample","url":"https://gobyexample.com/json"},
+		{"path":"/hipsteripsum","url":"https://hipsum.co/"},
+		{"path":"/json","url":"https://www.json.org/json-en.html"}]`
+
+	jsonHandler, err := urlshortener.JSONHandler([]byte(json), yamlHandler)
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println("Starting the server on :8080")
-	http.ListenAndServe(":8080", yamlHandler)
+	http.ListenAndServe(":8080", jsonHandler)
 
 }
 
