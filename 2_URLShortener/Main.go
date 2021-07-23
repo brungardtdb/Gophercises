@@ -1,9 +1,9 @@
 package main
 
 import (
+	"GOPHERCISES/2_URLShortener/urlshortener"
 	"fmt"
 	"net/http"
-	"urlshortener"
 )
 
 func main() {
