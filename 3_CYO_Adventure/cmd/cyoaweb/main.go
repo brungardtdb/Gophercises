@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -21,13 +20,10 @@ func main() {
 	f, err := os.Open(*fileName)
 	check(err)
 
-	d := json.NewDecoder(f)
-	var story cyoa.Story
-
-	err = d.Decode(&story)
+	story, err := cyoa.JsonStory(f)
 	check(err)
 
-	fmt.Println(story)
+	fmt.Printf("%v\n", story)
 }
 
 func check(err error) {
