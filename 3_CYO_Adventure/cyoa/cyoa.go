@@ -28,6 +28,17 @@ func init() {
 	tpl = template.Must(template.New("").Parse(defaultHandlerTmplt))
 }
 
+func JsonStory(r io.Reader) (Story, error) {
+
+	d := json.NewDecoder(r)
+	var story Story
+
+	if err := d.Decode(&story); err != nil {
+		return nil, err
+	}
+	return story, nil
+}
+
 var defaultHandlerTmplt = `
 <!DOCTYPE>
 <html>
@@ -96,23 +107,25 @@ var defaultHandlerTmplt = `
 </html>
 `
 
-func JsonStory(r io.Reader) (Story, error) {
-
-	d := json.NewDecoder(r)
-	var story Story
-
-	if err := d.Decode(&story); err != nil {
-		return nil, err
-	}
-	return story, nil
-}
-
 type handler struct {
 	s Story
+	t *template.Template
 }
 
-func NewHandler(s Story) http.Handler {
-	return handler{s}
+type HandlerOption func(h *handler)
+
+func WithTemplate(t *template.Template) HandlerOption {
+	return func(h *handler) {
+		h.t = t
+	}
+}
+
+func NewHandler(s Story, opts ...HandlerOption) http.Handler {
+	h := handler{s, tpl}
+	for _, opt := range opts {
+		opt(&h)
+	}
+	return h
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +138,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path = path[1:]
 
 	if chapter, ok := h.s[path]; ok {
-		if err := tpl.Execute(w, chapter); err != nil {
+		if err := h.t.Execute(w, chapter); err != nil {
 			log.Printf("%v", err)
 			http.Error(w, "Something went wrong....", http.StatusInternalServerError)
 		}

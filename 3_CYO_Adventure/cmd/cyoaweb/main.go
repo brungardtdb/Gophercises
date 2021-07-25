@@ -26,7 +26,7 @@ func main() {
 	story, err := cyoa.JsonStory(f)
 	check(err)
 
-	h := cyoa.NewHandler(story)
+	h := cyoa.NewHandler(story/*, cyoa.WithTemplate(nil)*/) // example of passing in options for handler
 	port := fmt.Sprintf(":%v", *portName)
 	fmt.Println("Starting the server on port ", port)
 	log.Fatal(http.ListenAndServe(port, h))
